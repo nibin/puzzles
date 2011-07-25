@@ -1,0 +1,28 @@
+10
+A	1
+E
+F	3
+A
+B
+C
+B	1
+G
+C	2
+H
+I
+D	3
+H
+I
+J
+E	1
+D
+G	1
+C
+H	2
+C
+D
+I	1
+C
+J	1
+D
+
