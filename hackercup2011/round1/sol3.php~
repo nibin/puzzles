@@ -1,0 +1,135 @@
+<?php
+
+$rHandle = fopen('input.txt', 'r');
+$oHandle = fopen('output9.txt', 'w');
+
+$string = "";
+while(!feof($rHandle)){
+$string = fread($rHandle, filesize('input.txt'));
+$text .= $string;
+}
+fclose($rHandle);
+
+$lines = preg_split('/[\n]+/', $text);
+
+$nb_lines_to_check = $lines[0];
+foreach($lines as $index => $line)
+{
+if($index == 0) {
+echo "line 1: amount of games: " . $line;
+continue;
+}
+$values = preg_split('/[\s]+/', $line);
+
+// skip none valide grids
+if( count($values) <= 1 ) continue;
+
+$rows = $values[0];
+$cols = $values[1];
+$target = $values[2];
+$nb_holes = $values[3];
+$holes = array();
+$coord = array_splice($values, 4);
+for($i=0;$i<$nb_holes;$i++)
+{
+$id = $i*2 . ":" . ($i*2 +1);
+$holes[$id] = true;
+}
+$results = array();
+$starting_points = $cols -1;
+echo "\ngame $index: ". $rows ."x". $cols . "\ntarget: c " . $target . " : ". $nb_holes . " holes\n";
+for($y=0; $y < $rows; $y++)
+{
+$distance = $rows - $y;
+// if odd then add peg and space ono next line
+$odd = ($y + 1) % 2 == 1 ? true : false;
+
+for($x=0; $x < $cols; $x++)
+{
+if($target -$x > $distance) continue;
+if($odd && $x == $cols - 1) continue;
+$val = "x";
+if(isset($holes[$y . ":". $x]))
+{
+$val = '.';
+}
+/*
+Setting probabilities
+*/
+for($start=0; $start < $starting_points; $start++)
+{
+if(!isset($results[$start][$y][$x]))
+{
+$results[$start][$y][$x] = (float)0;
+}
+
+if($y == 0)
+{
+if($start == $x)
+{
+$results[$start][$y][$x] = 1;
+}
+else
+{
+$results[$start][$y][$x] = 0;
+continue;
+}
+}
+
+$current_value = $results[$start][$y][$x];
+if($current_value == 0 || $y + 1 >= $rows ) continue;
+
+$value_to_split = $current_value /2;
+$next_row = $y + 1;
+// if current value superior to 0 split prob with children
+if(!isset($results[$start][$next_row][$x]))
+{
+$results[$start][$next_row][$x] = 0;
+}
+// if hole then send all value down and continue to next else send half down, half sideways
+if($val == '.' )
+{
+$results[$start][$next_row][$x] += $current_value;
+continue;
+}
+$results[$start][$next_row][$x] += $value_to_split;
+
+if($odd)
+{
+$x_shift = 1;
+}
+else{
+$x_shift = -1;
+}
+
+$next_col = $x + $x_shift;
+/* bounce rules */
+if($next_col <= 0) $next_col = 0;
+if($next_col > $cols - 1) $next_cols = $cols-1;
+if(!isset($results[$start][$next_row][$next_col]))
+{
+$results[$start][$next_row][$next_col] = 0;
+}
+$results[$start][$next_row][$next_col] += $value_to_split;
+
+}
+$delim = ".";
+}
+}
+
+$proba = 0;
+foreach($results as $starting => $test)
+{
+if($proba < $test[$rows -1][$target] )
+{
+$winner = $starting;
+$proba = $test[$rows -1][$target];
+}
+}
+echo "\nwinner: " . sprintf("%s %7.6f", $winner, round($proba, 6) );
+fwrite($oHandle, sprintf("%s %7.6f\n", $winner, round($proba, 6)) );
+}
+
+fclose($oHandle);
+
+?>
